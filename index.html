@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Samsung Marketing Consulting Challenge 2026 — E-Book</title>
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{ --blue:#1428A0; --navy:#0A1A5C; --ink:#05061a; --paper:#eef1ff; --muted:#9aa3c7; }
+  *{ margin:0; padding:0; box-sizing:border-box; }
+  html,body{ height:100%; }
+  body{ font-family:'Sarabun',system-ui,sans-serif; color:var(--paper);
+    background:radial-gradient(70% 60% at 50% 0%, #14225e 0%, #05061a 60%); overflow:hidden; }
+
+  /* top bar */
+  .bar{ position:fixed; top:0; left:0; right:0; height:54px; z-index:30;
+    display:flex; align-items:center; justify-content:space-between; padding:0 16px;
+    background:rgba(5,6,26,.55); backdrop-filter:blur(10px); border-bottom:1px solid rgba(255,255,255,.08); }
+  .brand{ font-weight:700; font-size:14px; letter-spacing:.5px; }
+  .brand span{ color:var(--muted); font-weight:400; }
+  .bar .right{ display:flex; gap:8px; }
+  .ib{ display:inline-flex; align-items:center; gap:6px; border:1px solid rgba(255,255,255,.14);
+    background:rgba(255,255,255,.05); color:var(--paper); border-radius:100px; padding:8px 14px;
+    font-family:inherit; font-size:13px; cursor:pointer; transition:.2s; text-decoration:none; }
+  .ib:hover{ background:rgba(255,255,255,.13); }
+  .ib svg{ width:15px; height:15px; stroke:currentColor; fill:none; stroke-width:1.8; }
+
+  /* stage */
+  #stage{ position:absolute; inset:54px 0 66px; display:flex; align-items:center; justify-content:center; }
+  #book{ }
+  .stpageflip-wrapper, #book{ margin:0 auto; }
+  #book .page{ background:#fff; }
+  #book img{ width:100%; height:100%; display:block; }
+
+  /* bottom controls */
+  .ctrl{ position:fixed; bottom:0; left:0; right:0; height:66px; z-index:30;
+    display:flex; align-items:center; justify-content:center; gap:18px;
+    background:rgba(5,6,26,.55); backdrop-filter:blur(10px); border-top:1px solid rgba(255,255,255,.08); }
+  .nav{ width:44px; height:44px; border-radius:50%; border:1px solid rgba(255,255,255,.16);
+    background:rgba(255,255,255,.06); color:#fff; cursor:pointer; display:grid; place-items:center; transition:.2s; }
+  .nav:hover{ background:var(--blue); border-color:var(--blue); }
+  .nav:disabled{ opacity:.3; cursor:default; }
+  .nav svg{ width:20px; height:20px; stroke:#fff; fill:none; stroke-width:2; }
+  .pageno{ font-variant-numeric:tabular-nums; font-size:14px; color:var(--paper); min-width:74px; text-align:center; }
+  .pageno b{ color:#fff; } .pageno span{ color:var(--muted); }
+
+  /* loading */
+  #load{ position:fixed; inset:0; z-index:50; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:18px;
+    background:radial-gradient(70% 60% at 50% 30%, #14225e 0%, #05061a 65%); }
+  .ring{ width:46px; height:46px; border-radius:50%; border:3px solid rgba(255,255,255,.15); border-top-color:#6d8bff; animation:spin 1s linear infinite; }
+  @keyframes spin{ to{ transform:rotate(360deg); } }
+  #load .t{ font-size:15px; color:var(--paper); } #load .p{ font-size:13px; color:var(--muted); }
+  #err{ display:none; text-align:center; max-width:520px; padding:0 24px; }
+  #err h2{ color:#ff9db1; font-size:18px; margin-bottom:8px; } #err p{ color:var(--muted); font-size:13.5px; line-height:1.7; }
+  #err code{ background:rgba(255,255,255,.1); padding:2px 6px; border-radius:5px; color:#cdd6ff; }
+
+  .hint{ position:fixed; bottom:74px; left:50%; transform:translateX(-50%); z-index:20;
+    font-size:12px; color:var(--muted); background:rgba(5,6,26,.5); padding:5px 12px; border-radius:100px;
+    opacity:1; transition:opacity .6s; }
+  @media (max-width:640px){ .brand{ font-size:12px; } .ib{ padding:7px 11px; font-size:12px; } }
+</style>
+</head>
+<body>
+
+<!-- ========= CONFIG: ชื่อไฟล์ PDF (ต้องอยู่โฟลเดอร์เดียวกัน) ========= -->
+<script>const PDF_URL = "ebook.pdf";</script>
+
+<div class="bar">
+  <div class="brand">Samsung Marketing Consulting Challenge 2026 <span>· E-Book</span></div>
+  <div class="right">
+    <button class="ib" id="fs"><svg viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg> เต็มจอ</button>
+    <a class="ib" id="dl" href="ebook.pdf" download><svg viewBox="0 0 24 24"><path d="M12 3v12M7 11l5 5 5-5M5 21h14"/></svg> ดาวน์โหลด</a>
+  </div>
+</div>
+
+<div id="stage"><div id="book"></div></div>
+
+<div class="hint" id="hint">◀ คลิกหรือลากขอบหน้าเพื่อพลิก ▶</div>
+
+<div class="ctrl">
+  <button class="nav" id="prev"><svg viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></svg></button>
+  <div class="pageno"><b id="cur">1</b> <span>/ <span id="tot">–</span></span></div>
+  <button class="nav" id="next"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></button>
+</div>
+
+<div id="load">
+  <div class="ring" id="ring"></div>
+  <div class="t" id="lt">กำลังเตรียม E-Book…</div>
+  <div class="p" id="lp"></div>
+  <div id="err">
+    <h2>เปิด E-Book ไม่ได้</h2>
+    <p>ตรวจว่าไฟล์ PDF ชื่อ <code id="pdfname">ebook.pdf</code> อยู่ในโฟลเดอร์เดียวกับหน้านี้ และชื่อสะกดตรงกันเป๊ะ (ตัวพิมพ์เล็ก-ใหญ่)</p>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/page-flip@2.0.7/dist/js/page-flip.browser.js"></script>
+<script>
+(function(){
+  "use strict";
+  const lt=document.getElementById('lt'), lp=document.getElementById('lp'),
+        ring=document.getElementById('ring'), err=document.getElementById('err'),
+        load=document.getElementById('load');
+  document.getElementById('pdfname').textContent = PDF_URL;
+  document.getElementById('dl').setAttribute('href', PDF_URL);
+
+  function fail(){ ring.style.display='none'; lt.style.display='none'; lp.style.display='none'; err.style.display='block'; }
+
+  if(typeof pdfjsLib==='undefined' || typeof St==='undefined'){ fail(); return; }
+  pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+
+  let pageFlip=null, total=0;
+
+  pdfjsLib.getDocument(PDF_URL).promise.then(async function(pdf){
+    total = pdf.numPages;
+    document.getElementById('tot').textContent = total;
+    const images = [];
+    // render each page to a JPEG data URL
+    for(let i=1;i<=total;i++){
+      lt.textContent = "กำลังโหลดหน้า";
+      lp.textContent = i + " / " + total;
+      const page = await pdf.getPage(i);
+      const base = page.getViewport({scale:1});
+      const scale = Math.min(2.0, 1400 / base.width);   // crisp but not huge
+      const vp = page.getViewport({scale});
+      const canvas = document.createElement('canvas');
+      canvas.width = vp.width; canvas.height = vp.height;
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle="#fff"; ctx.fillRect(0,0,canvas.width,canvas.height);
+      await page.render({canvasContext:ctx, viewport:vp}).promise;
+      images.push(canvas.toDataURL('image/jpeg', 0.9));
+    }
+
+    // aspect from first page (A4 ~ 0.707)
+    const first = await pdf.getPage(1);
+    const v = first.getViewport({scale:1});
+    const ratio = v.height / v.width;
+
+    const stage = document.getElementById('stage');
+    const avW = stage.clientWidth, avH = stage.clientHeight;
+    // single-page width that fits height, leaving margin
+    let pw = Math.min(avW*0.9, (avH*0.94)/ratio);
+    if(window.innerWidth>820) pw = Math.min(pw, avW*0.46); // spread (2 pages) on desktop
+    let ph = pw*ratio;
+
+    pageFlip = new St.PageFlip(document.getElementById('book'), {
+      width: pw, height: ph, size:'stretch',
+      minWidth: 260, maxWidth: 1200, minHeight: 260*ratio, maxHeight: 1200*ratio,
+      drawShadow:true, flippingTime:700, usePortrait:true, autoSize:true,
+      maxShadowOpacity:.5, showCover:true, mobileScrollSupport:true
+    });
+    pageFlip.loadFromImages(images);
+
+    pageFlip.on('flip', function(e){ document.getElementById('cur').textContent = (e.data+1); updateNav(); });
+    pageFlip.on('changeState', updateNav);
+
+    load.style.opacity='0'; setTimeout(()=>load.style.display='none', 400);
+    setTimeout(()=>{ document.getElementById('hint').style.opacity='0'; }, 5000);
+    updateNav();
+  }).catch(function(e){ console.error(e); fail(); });
+
+  function updateNav(){
+    if(!pageFlip) return;
+    const cur = pageFlip.getCurrentPageIndex();
+    document.getElementById('prev').disabled = (cur<=0);
+    document.getElementById('next').disabled = (cur>=total-1);
+  }
+
+  document.getElementById('prev').onclick = ()=> pageFlip && pageFlip.flipPrev();
+  document.getElementById('next').onclick = ()=> pageFlip && pageFlip.flipNext();
+  document.addEventListener('keydown', function(e){
+    if(!pageFlip) return;
+    if(e.key==='ArrowLeft') pageFlip.flipPrev();
+    if(e.key==='ArrowRight') pageFlip.flipNext();
+  });
+
+  document.getElementById('fs').onclick = function(){
+    if(!document.fullscreenElement){ (document.documentElement.requestFullscreen||document.documentElement.webkitRequestFullscreen).call(document.documentElement); }
+    else{ (document.exitFullscreen||document.webkitExitFullscreen).call(document); }
+  };
+})();
+</script>
+</body>
+</html>
