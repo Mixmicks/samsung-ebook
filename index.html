@@ -26,7 +26,7 @@
   .ib svg{ width:15px; height:15px; stroke:currentColor; fill:none; stroke-width:1.8; }
 
   /* stage */
-  #stage{ position:absolute; inset:54px 0 66px; display:flex; align-items:center; justify-content:center; }
+  #stage{ position:absolute; inset:54px 0 66px; display:flex; align-items:center; justify-content:center; padding:14px 8px; }
   #book{ }
   .stpageflip-wrapper, #book{ margin:0 auto; }
   #book .page{ background:#fff; }
@@ -138,14 +138,21 @@
 
     const stage = document.getElementById('stage');
     const avW = stage.clientWidth, avH = stage.clientHeight;
-    // single-page width that fits height, leaving margin
-    let pw = Math.min(avW*0.9, (avH*0.94)/ratio);
-    if(window.innerWidth>820) pw = Math.min(pw, avW*0.46); // spread (2 pages) on desktop
-    let ph = pw*ratio;
+    // fit within available height first (leave a safety margin so bars never cover content)
+    let ph = avH * 0.96;
+    let pw = ph / ratio;
+    if(window.innerWidth>820){
+      // desktop spread = 2 pages side by side; each page max ~46% width
+      if(pw > avW*0.46){ pw = avW*0.46; ph = pw*ratio; }
+    } else {
+      if(pw > avW*0.94){ pw = avW*0.94; ph = pw*ratio; }
+    }
 
+    const maxH = Math.floor(avH*0.96);
+    const maxW = Math.floor(window.innerWidth>820 ? avW*0.48 : avW*0.96);
     pageFlip = new St.PageFlip(document.getElementById('book'), {
-      width: pw, height: ph, size:'stretch',
-      minWidth: 260, maxWidth: 1200, minHeight: 260*ratio, maxHeight: 1200*ratio,
+      width: Math.floor(pw), height: Math.floor(ph), size:'stretch',
+      minWidth: 240, maxWidth: maxW, minHeight: Math.floor(240*ratio), maxHeight: maxH,
       drawShadow:true, flippingTime:700, usePortrait:true, autoSize:true,
       maxShadowOpacity:.5, showCover:true, mobileScrollSupport:true
     });
